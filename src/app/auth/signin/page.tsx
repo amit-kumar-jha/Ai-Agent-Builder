@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useStore from '@/lib/store';
-import { Bot, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Bot, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signInAction } from '@/actions/auth';
 
 export default function SignInPage() {
@@ -11,6 +11,7 @@ export default function SignInPage() {
   const { setAuth } = useStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function SignInPage() {
       formData.append('password', password);
 
       const res = await signInAction(formData);
-      
+
       if (res.error) {
         throw new Error(res.error);
       }
@@ -34,7 +35,7 @@ export default function SignInPage() {
       if (res.user) {
         setAuth(res.user, 'server-action');
       }
-      
+
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
@@ -47,10 +48,10 @@ export default function SignInPage() {
   return (
     <div className="auth-page">
       <div className="auth-container">
-        
+
         <div className="auth-logo">
-          <div className="auth-logo-icon"><Bot size={24} /></div>
-          <div className="auth-logo-text">AgentOS</div>
+          <div className="auth-logo-icon" style={{ padding: 0, overflow: 'hidden', background: 'transparent' }}><img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
+          <div className="auth-logo-text"><Link href="/" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>NexAgeAI</Link></div>
         </div>
 
         <h1 className="auth-title">Welcome back</h1>
@@ -67,8 +68,8 @@ export default function SignInPage() {
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>Email Address</label>
             <div style={{ position: 'relative' }}>
               <Mail size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -86,20 +87,27 @@ export default function SignInPage() {
             </div>
             <div style={{ position: 'relative' }}>
               <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input 
-                type="password" 
+              <input
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                style={{ width: '100%', padding: '12px 12px 12px 38px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', fontSize: '14px', outline: 'none', color: 'var(--text-primary)' }}
+                style={{ width: '100%', padding: '12px 40px 12px 38px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', fontSize: '14px', outline: 'none', color: 'var(--text-primary)' }}
                 className="focus-ring"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {showPassword ? <EyeOff size={16} color="var(--text-muted)" /> : <Eye size={16} color="var(--text-muted)" />}
+              </button>
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '8px', opacity: loading ? 0.7 : 1 }}
           >

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useStore from '@/lib/store';
-import { Bot, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Bot, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signUpAction } from '@/actions/auth';
 
 export default function SignUpPage() {
@@ -12,6 +12,7 @@ export default function SignUpPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -51,8 +52,8 @@ export default function SignUpPage() {
       <div className="auth-container">
         
         <div className="auth-logo">
-          <div className="auth-logo-icon"><Bot size={24} /></div>
-          <div className="auth-logo-text">AgentOS</div>
+          <div className="auth-logo-icon" style={{ padding: 0, overflow: 'hidden', background: 'transparent' }}><img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
+          <div className="auth-logo-text">NexAgeAI</div>
         </div>
 
         <h1 className="auth-title">Create an account</h1>
@@ -103,15 +104,22 @@ export default function SignUpPage() {
             <div style={{ position: 'relative' }}>
               <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
-                type="password" 
+                type={showPassword ? 'text' : 'password'} 
                 required
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                style={{ width: '100%', padding: '12px 12px 12px 38px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', fontSize: '14px', outline: 'none', color: 'var(--text-primary)' }}
+                style={{ width: '100%', padding: '12px 40px 12px 38px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', fontSize: '14px', outline: 'none', color: 'var(--text-primary)' }}
                 className="focus-ring"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                {showPassword ? <EyeOff size={16} color="var(--text-muted)" /> : <Eye size={16} color="var(--text-muted)" />}
+              </button>
             </div>
           </div>
 

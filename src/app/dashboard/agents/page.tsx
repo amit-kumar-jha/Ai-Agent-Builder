@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, Plus, Search, Filter, MoreHorizontal, Activity, Loader2 } from 'lucide-react';
-import { getMyAgents, createAgentAction } from '@/actions/agent';
+import { Bot, Plus, Search, Filter, MoreHorizontal, Activity, Loader2, ChevronRight, Trash2 } from 'lucide-react';
+import { getMyAgents, createAgentAction, deleteAgentAction } from '@/actions/agent';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function AgentsPage() {
   const router = useRouter();
@@ -11,23 +12,52 @@ export default function AgentsPage() {
   const [agents, setAgents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, agentId: string | null }>({ isOpen: false, agentId: null });
+  const [limitModal, setLimitModal] = useState<{ isOpen: boolean, message: string }>({ isOpen: false, message: '' });
+
+  const loadData = async () => {
+    setIsLoading(true);
+    const res = await getMyAgents();
+    if (res && res.data) {
+      setAgents(res.data);
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    async function loadAgents() {
-      const res = await getMyAgents();
-      if (res && res.data) {
-        setAgents(res.data);
-      }
-      setIsLoading(false);
-    }
-    loadAgents();
+    loadData();
   }, []);
+
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteModal({ isOpen: true, agentId: id });
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteModal.agentId;
+    if (!id) return;
+
+    setIsDeleting(id);
+    const res = await deleteAgentAction(id);
+    if (res.success) {
+      setAgents(agents.filter(a => a._id !== id));
+      setDeleteModal({ isOpen: false, agentId: null });
+    } else {
+      alert(res.error || 'Failed to delete agent');
+    }
+    setIsDeleting(null);
+  };
 
   const handleCreateAgent = async () => {
     setIsCreating(true);
     const res = await createAgentAction();
     if (res.success && res.agentId) {
       router.push(`/dashboard/agents/${res.agentId}/builder`);
+    } else if (res.error === 'LIMIT_REACHED') {
+      setLimitModal({ isOpen: true, message: res.message || 'You have reached your plan limit.' });
+      setIsCreating(false);
     } else {
       alert(res.error || 'Failed to create agent');
       setIsCreating(false);
@@ -38,7 +68,7 @@ export default function AgentsPage() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>My Agents</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Create, manage, and monitor your AI agents.</p>
@@ -48,7 +78,7 @@ export default function AgentsPage() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
           <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
@@ -63,7 +93,7 @@ export default function AgentsPage() {
         </button>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', overflow: 'hidden' }}>
+      <div className="table-container" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ padding: '64px', display: 'flex', justifyContent: 'center' }}>
             <Loader2 size={32} className="animate-spin" color="var(--accent-purple)" />
@@ -74,50 +104,113 @@ export default function AgentsPage() {
             <p>No agents found. Click "New Agent" to get started.</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
-                <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Agent</th>
-                <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Model</th>
-                <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Active</th>
-                <th style={{ width: '60px' }}></th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop Table */}
+            <table className="desktop-only" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
+                  <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Agent</th>
+                  <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Model</th>
+                  <th style={{ textAlign: 'left', padding: '16px 20px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Active</th>
+                  <th style={{ width: '60px' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAgents.map((agent, i) => (
+                  <tr key={agent._id} style={{ borderBottom: i === filteredAgents.length - 1 ? 'none' : '1px solid var(--border-primary)' }}>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: `rgba(139, 92, 246, 0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: 'var(--accent-purple)' }}><Bot size={18} /></div>
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{agent.name}</div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>{agent.description || 'No description provided'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <span className={`badge ${agent.status === 'active' ? 'badge-green' : 'badge-amber'}`}>{agent.status || 'Draft'}</span>
+                    </td>
+                    <td style={{ padding: '16px 20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                      {agent.model}
+                    </td>
+                    <td style={{ padding: '16px 20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                      {new Date(agent.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                        <Link href={`/dashboard/agents/${agent._id}/builder`}>
+                          <button style={{ padding: '6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }} title="Edit">
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </Link>
+                        <button 
+                          onClick={(e) => handleDeleteClick(e, agent._id)} 
+                          disabled={isDeleting === agent._id}
+                          style={{ padding: '6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', opacity: isDeleting === agent._id ? 0.5 : 1 }} 
+                          title="Delete"
+                        >
+                          {isDeleting === agent._id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile List */}
+            <div className="mobile-only" style={{ display: 'none' }}>
               {filteredAgents.map((agent, i) => (
-                <tr key={agent._id} style={{ borderBottom: i === filteredAgents.length - 1 ? 'none' : '1px solid var(--border-primary)' }}>
-                  <td style={{ padding: '16px 20px' }}>
+                <Link key={agent._id} href={`/dashboard/agents/${agent._id}/builder`} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '20px', borderBottom: i === filteredAgents.length - 1 ? 'none' : '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: `rgba(139, 92, 246, 0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: 'var(--accent-purple)' }}><Bot size={18} /></div>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `rgba(139, 92, 246, 0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: 'var(--accent-purple)' }}><Bot size={20} /></div>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{agent.name}</div>
-                        <div style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>{agent.description || 'No description provided'}</div>
+                        <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>{agent.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className={`badge ${agent.status === 'active' ? 'badge-green' : 'badge-amber'}`} style={{ fontSize: '10px', padding: '1px 6px' }}>{agent.status || 'Draft'}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{agent.model}</span>
+                        </div>
                       </div>
                     </div>
-                  </td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <span className={`badge ${agent.status === 'active' ? 'badge-green' : 'badge-amber'}`}>{agent.status || 'Draft'}</span>
-                  </td>
-                  <td style={{ padding: '16px 20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                    {agent.model}
-                  </td>
-                  <td style={{ padding: '16px 20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                    {new Date(agent.updatedAt).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                    <Link href={`/dashboard/agents/${agent._id}/builder`}>
-                      <button style={{ padding: '6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
-                        <MoreHorizontal size={18} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <button 
+                        onClick={(e) => handleDeleteClick(e, agent._id)}
+                        style={{ padding: '8px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent-red)' }}
+                      >
+                        <Trash2 size={18} />
                       </button>
-                    </Link>
-                  </td>
-                </tr>
+                      <ChevronRight size={18} color="var(--text-tertiary)" />
+                    </div>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
+
+      <ConfirmationModal 
+        isOpen={deleteModal.isOpen}
+        title="Delete Agent"
+        message="Are you sure you want to delete this agent? This action cannot be undone and all data associated with this agent will be lost."
+        confirmLabel="Delete Agent"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteModal({ isOpen: false, agentId: null })}
+        isLoading={!!isDeleting}
+        type="danger"
+      />
+      <ConfirmationModal 
+        isOpen={limitModal.isOpen}
+        title="Plan Limit Reached"
+        message={limitModal.message + " Please upgrade your plan to create more agents."}
+        confirmLabel="Upgrade Now"
+        cancelLabel="Maybe Later"
+        onConfirm={() => router.push('/dashboard/billing')}
+        onCancel={() => setLimitModal({ isOpen: false, message: '' })}
+        type="warning"
+      />
     </div>
   );
 }

@@ -101,6 +101,13 @@ const agentSchema = new mongoose.Schema(
     public: { type: Boolean, default: false },
     marketplacePrice: { type: Number, default: 0 },
 
+    knowledge: [{
+      fileName: { type: String, required: true },
+      content: { type: String, required: true },
+      uploadedAt: { type: Date, default: Date.now },
+      size: { type: Number, default: 0 },
+    }],
+
     // Settings
     settings: {
       timeout: { type: Number, default: 300 },

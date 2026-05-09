@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Bot, Send, Loader2, RotateCcw, Copy, Check, Sparkles, ChevronDown, Settings2, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '@/components/theme-toggle';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -228,6 +229,7 @@ export default function PublicChatPage() {
           systemPrompt: agentConfig?.systemPrompt || 'You are a helpful assistant.',
           model: agentConfig?.model || 'llama3.2',
           temperature: agentConfig?.temperature ?? 0.7,
+          agentId,
         }),
       });
 
@@ -328,6 +330,7 @@ export default function PublicChatPage() {
             </div>
           </div>
           <div className="chat-header-actions">
+            <ThemeToggle />
             <button className="chat-header-btn" onClick={handleReset} title="New conversation">
               <RotateCcw size={16} />
             </button>
@@ -434,7 +437,7 @@ export default function PublicChatPage() {
             </button>
           </div>
           <p className="chat-disclaimer">
-            Powered by <strong>AgentOS</strong> · AI responses may be inaccurate
+            Powered by <strong>NexAgeAI</strong> · AI responses may be inaccurate
           </p>
         </div>
       </div>

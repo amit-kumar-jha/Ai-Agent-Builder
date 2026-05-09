@@ -1,16 +1,59 @@
 import { NextResponse } from 'next/server';
 import { LLM_MODELS } from '@/lib/engine/constants/models';
 import { LLMClient } from '@/lib/engine/services/LLMClient';
+import connectDB from '@/lib/mongoose';
+import Agent from '@/models/Agent';
 
 const llm = new LLMClient();
 
 export async function POST(req: Request) {
   try {
-    const { messages, systemPrompt, model, temperature } = await req.json();
+    const { messages, systemPrompt, model, temperature, agentId } = await req.json();
+
+    // Load agent to get knowledge base
+    await connectDB();
+    let agent: any = null;
+    if (agentId) {
+      // Explicitly select knowledge field and don't exclude any fields
+      agent = await Agent.findById(agentId).lean();
+      console.log('[RAG] Agent found:', !!agent, 'ID:', agentId);
+      console.log('[RAG] Knowledge docs:', agent?.knowledge?.length || 0);
+    }
+
+    let finalSystemPrompt = systemPrompt || 'You are a helpful assistant.';
+
+    // RAG: Inject knowledge base into prompt
+    if (agent && agent.knowledge && agent.knowledge.length > 0) {
+      console.log('[RAG] Injecting', agent.knowledge.length, 'documents into system prompt');
+      
+      // Build knowledge context
+      let knowledgeContext = '';
+      agent.knowledge.forEach((doc: any) => {
+        console.log('[RAG] Document:', doc.fileName, 'Content length:', doc.content?.length || 0);
+        if (doc.content) {
+          knowledgeContext += `### Document: ${doc.fileName}\n${doc.content}\n\n`;
+        }
+      });
+
+      if (knowledgeContext.length > 0) {
+        // Prepend knowledge as the HIGHEST priority context using XML tags
+        finalSystemPrompt = `You are an expert AI assistant. You have been provided with a knowledge base containing reference documents. 
+You MUST prioritize this knowledge base when answering. If the user's question relates to the documents, you must extract the answer from them.
+
+<knowledge_base>
+${knowledgeContext}
+</knowledge_base>
+
+User's custom instructions for your persona:
+${finalSystemPrompt}`;
+      }
+    } else {
+      console.log('[RAG] No knowledge base found for agent', agentId);
+    }
 
     // Prepare the full conversation history including the system prompt
     const fullMessages = [
-      { role: 'system', content: systemPrompt || 'You are a helpful assistant.' },
+      { role: 'system', content: finalSystemPrompt },
       ...messages,
     ];
 
@@ -29,7 +72,10 @@ export async function POST(req: Request) {
               model,
               messages: fullMessages,
               stream: false,
-              options: { temperature: temperature || 0.7 },
+              options: { 
+                temperature: temperature || 0.7,
+                num_ctx: 32768 // Need large context for RAG
+              },
             }),
           });
 
@@ -39,8 +85,13 @@ export async function POST(req: Request) {
           }
 
           const data = await ollamaResponse.json();
+
+          // Track execution on agent
+          await trackExecution(agentId, true, 0);
+
           return NextResponse.json({ content: data.message.content });
         } catch (error: any) {
+          await trackExecution(agentId, false, 0);
           return NextResponse.json({
             error: error.message.includes('Ollama Error')
               ? error.message
@@ -63,6 +114,16 @@ export async function POST(req: Request) {
         maxTokens: 2000,
       });
 
+      // Calculate cost based on token usage
+      let cost = 0;
+      if (result.usage && modelConfig.costPerMillionInput > 0) {
+        cost = ((result.usage.prompt_tokens || 0) * modelConfig.costPerMillionInput / 1_000_000)
+             + ((result.usage.completion_tokens || 0) * modelConfig.costPerMillionOutput / 1_000_000);
+      }
+
+      // Track execution on agent
+      await trackExecution(agentId, true, cost);
+
       return NextResponse.json({
         content: result.text,
         model: result.model || model,
@@ -70,6 +131,8 @@ export async function POST(req: Request) {
       });
     } catch (error: any) {
       console.error(`Chat error [${modelConfig.provider}]:`, error.message);
+
+      await trackExecution(agentId, false, 0);
 
       // Provider-specific error messages
       if (modelConfig.provider === 'openrouter' && error.message.includes('no API key')) {
@@ -90,5 +153,25 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Chat API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+/** Track execution stats on the agent (non-blocking) */
+async function trackExecution(agentId: string | undefined, success: boolean, cost: number) {
+  if (!agentId) return;
+  try {
+    await connectDB();
+    const update: any = {
+      $inc: {
+        'stats.totalExecutions': 1,
+        ...(success ? { 'stats.successCount': 1 } : { 'stats.errorCount': 1 }),
+        ...(cost > 0 ? { 'stats.costToDate': cost } : {}),
+      },
+      $set: { 'stats.lastExecutedAt': new Date() },
+    };
+    await Agent.findByIdAndUpdate(agentId, update);
+  } catch (e) {
+    // Non-blocking — don't fail the response if tracking fails
+    console.error('Failed to track execution:', e);
   }
 }

@@ -46,6 +46,27 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  plan: {
+    type: String,
+    enum: ['free', 'starter', 'pro', 'enterprise'],
+    default: 'free',
+  },
+  stripeCustomerId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  stripeSubscriptionId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  stripePriceId: {
+    type: String,
+  },
+  stripeCurrentPeriodEnd: {
+    type: Date,
+  },
 });
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

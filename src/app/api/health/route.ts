@@ -14,7 +14,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: 'ok',
-    service: 'AgentOS',
+    service: 'NexAgeAI',
     timestamp: new Date().toISOString(),
     mongoStatus,
     environment: process.env.NODE_ENV || 'development',

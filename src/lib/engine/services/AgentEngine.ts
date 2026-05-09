@@ -56,7 +56,7 @@ export class AgentEngine {
     let totalTokens = 0;
 
     try {
-      const { nodes, connections } = agent.workflow;
+      const { nodes, connections } = agent.workflow as { nodes: any[]; connections: any[] };
       const nodeMap = new Map(nodes.map((n: any) => [n.id, n]));
       const connMap = new Map<string, string[]>();
       connections.forEach((c: any) => {
@@ -96,15 +96,19 @@ export class AgentEngine {
             error: null,
           };
 
-          if (nodeResult.cost) { totalCost += nodeResult.cost; traceEntry.cost = nodeResult.cost; }
-          if (nodeResult.tokensUsed) { traceEntry.tokensUsed = nodeResult.tokensUsed; totalTokens += nodeResult.tokensUsed.total || 0; }
-          if (nodeResult.cacheHit) { traceEntry.cacheHit = true; }
+          if ('cost' in nodeResult && nodeResult.cost) { totalCost += nodeResult.cost as number; traceEntry.cost = nodeResult.cost; }
+          if ('tokensUsed' in nodeResult && nodeResult.tokensUsed) { 
+            const tu = nodeResult.tokensUsed as any;
+            traceEntry.tokensUsed = tu; 
+            totalTokens += tu.total || 0; 
+          }
+          if ('cacheHit' in nodeResult && nodeResult.cacheHit) { traceEntry.cacheHit = true; }
 
           trace.push(traceEntry);
           state[node.id] = { outputs: nodeResult.output, status: 'completed' };
 
-          if (node.type === 'decision' && nodeResult.nextNodeId) {
-            currentNodeId = nodeResult.nextNodeId;
+          if (node.type === 'decision' && ('nextNodeId' in nodeResult) && (nodeResult as any).nextNodeId) {
+            currentNodeId = (nodeResult as any).nextNodeId;
           } else {
             const nextNodes = connMap.get(node.id);
             currentNodeId = nextNodes && nextNodes.length > 0 ? nextNodes[0] : null;

@@ -50,8 +50,8 @@ export default function ForgotPasswordPage() {
       <div className="auth-container">
 
         <div className="auth-logo">
-          <div className="auth-logo-icon"><Bot size={24} /></div>
-          <div className="auth-logo-text">AgentOS</div>
+          <div className="auth-logo-icon" style={{ padding: 0, overflow: 'hidden', background: 'transparent' }}><img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
+          <div className="auth-logo-text">NexAgeAI</div>
         </div>
 
         {!success ? (

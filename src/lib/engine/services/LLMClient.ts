@@ -63,7 +63,7 @@ export class LLMClient {
         'Authorization': `Bearer ${this.openrouterKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-        'X-Title': 'AgentOS',
+        'X-Title': 'NexAgeAI',
       },
       body: JSON.stringify(body),
     });
@@ -111,7 +111,10 @@ export class LLMClient {
           model,
           messages,
           stream: false,
-          options: { temperature: temperature || 0.7 },
+          options: { 
+            temperature: temperature || 0.7,
+            num_ctx: 32768 // Required for RAG with large documents
+          },
         }),
       });
 

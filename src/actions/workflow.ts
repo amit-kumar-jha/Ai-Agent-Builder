@@ -3,6 +3,7 @@
 import connectDB from '@/lib/mongoose';
 import Workflow from '@/models/Workflow';
 import { getCurrentUser } from './auth';
+import { createNotification } from '@/lib/notifications';
 
 export async function getMyWorkflows() {
   try {
@@ -33,6 +34,13 @@ export async function createWorkflowAction() {
       name: 'New Workflow',
       user: user.id
     });
+
+    await createNotification({
+      userId: user.id,
+      title: 'Workflow Created',
+      message: `Your new workflow "${workflow.name}" is ready.`,
+      type: 'success'
+    });
     
     return { success: true, workflowId: workflow._id.toString() };
   } catch (error: any) {
@@ -58,5 +66,27 @@ export async function saveWorkflow(id: string, data: any) {
     return { success: true, workflow: JSON.parse(JSON.stringify(workflow)) };
   } catch (error) {
     return { error: 'Failed to save workflow' };
+  }
+}
+
+export async function deleteWorkflowAction(id: string) {
+  try {
+    await connectDB();
+    const user = await getCurrentUser();
+    if (!user) return { error: 'Unauthorized' };
+
+    const workflow = await Workflow.findOneAndDelete({ _id: id, user: user.id });
+    if (!workflow) return { error: 'Workflow not found' };
+
+    await createNotification({
+      userId: user.id,
+      title: 'Workflow Deleted',
+      message: `Workflow "${workflow.name}" has been removed.`,
+      type: 'warning'
+    });
+
+    return { success: true };
+  } catch (error) {
+    return { error: 'Failed to delete workflow' };
   }
 }

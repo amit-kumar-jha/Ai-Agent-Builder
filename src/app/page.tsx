@@ -43,12 +43,17 @@ export default function Home() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)', transition: 'background-color 0.3s ease, color 0.3s ease', fontFamily: 'var(--font-sans)', overflowX: 'hidden' }}>
 
       {/* Navbar */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 48px', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--bg-card)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border-primary)' }}>
+      <motion.nav 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 48px', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'var(--bg-card)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border-primary)' }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '28px', height: '28px', background: 'var(--text-primary)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Bot size={18} color="var(--bg-primary)" />
+          <div style={{ width: '32px', height: '32px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
+            <img src="/logo.png" alt="NexAgeAI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
-          <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>AgentOS</span>
+          <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>NexAgeAI</span>
         </div>
         <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
           <a href="#features" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }}>Features</a>
@@ -59,11 +64,16 @@ export default function Home() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <ThemeToggle />
           <button style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }} onClick={() => router.push('/auth/signin')}>Sign In</button>
-          <button style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '10px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'transform 0.2s' }} onClick={handleCtaClick} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '10px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} 
+            onClick={handleCtaClick}
+          >
             Start Building <ArrowRight size={14} />
-          </button>
+          </motion.button>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <section style={{ paddingTop: '180px', paddingBottom: '80px', textAlign: 'center', paddingLeft: '24px', paddingRight: '24px', position: 'relative' }}>
@@ -72,7 +82,7 @@ export default function Home() {
         <motion.div initial="hidden" animate="visible" variants={staggerContainer} style={{ position: 'relative', zIndex: 1, maxWidth: '1000px', margin: '0 auto' }}>
           <motion.div variants={fadeIn} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '999px', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '32px' }}>
             <span style={{ width: '8px', height: '8px', background: 'var(--accent-green)', borderRadius: '50%', display: 'inline-block' }}></span>
-            AgentOS 2.0 is now generally available
+            NexAgeAI is now available
           </motion.div>
 
           <motion.h1 variants={fadeIn} style={{ fontSize: '76px', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '24px', lineHeight: 1.05, color: 'var(--text-primary)' }}>
@@ -85,12 +95,22 @@ export default function Home() {
           </motion.p>
 
           <motion.div variants={fadeIn} style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <button style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }} onClick={handleCtaClick}>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 600, border: 'none', cursor: 'pointer' }} 
+              onClick={handleCtaClick}
+            >
               Create Agent Free
-            </button>
-            <button style={{ background: 'transparent', color: 'var(--text-primary)', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 600, border: '1px solid var(--border-secondary)', cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}>
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ background: 'transparent', color: 'var(--text-primary)', padding: '16px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 600, border: '1px solid var(--border-secondary)', cursor: 'pointer' }} 
+              onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               View Documentation
-            </button>
+            </motion.button>
           </motion.div>
         </motion.div>
       </section>
@@ -101,6 +121,14 @@ export default function Home() {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
+          animate={{
+            y: [0, -10, 0],
+            transition: {
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] } as any}
           style={{ maxWidth: '1000px', margin: '0 auto', background: 'var(--bg-card)', border: '1px solid var(--border-secondary)', borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}
         >
@@ -311,60 +339,92 @@ export default function Home() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>Start for free, upgrade when you need scale.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.2
+              }
+            }
+          }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}
+        >
           {/* Free */}
-          <div style={{ padding: '40px', border: '1px solid var(--border-primary)', borderRadius: '24px', background: 'var(--bg-card)' }}>
+          <motion.div 
+            variants={fadeIn}
+            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            style={{ padding: '40px', border: '1px solid var(--border-primary)', borderRadius: '24px', background: 'var(--bg-card)' }}
+          >
             <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px' }}>Developer</h3>
             <div style={{ fontSize: '48px', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '24px' }}>$0<span style={{ fontSize: '16px', color: 'var(--text-tertiary)', fontWeight: 400 }}>/mo</span></div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '32px' }}>Perfect for prototyping and personal projects.</p>
-            <button style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border-secondary)', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '32px' }}>Start Free</button>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border-secondary)', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '32px', cursor: 'pointer' }}>Start Free</motion.button>
             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> 2 Active Agents</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> Basic LLM Support</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> Web Widget Deploy</li>
             </ul>
-          </div>
+          </motion.div>
 
           {/* Pro */}
-          <div style={{ padding: '40px', border: '2px solid var(--text-primary)', borderRadius: '24px', background: 'var(--bg-primary)', position: 'relative' }}>
+          <motion.div 
+            variants={fadeIn}
+            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            style={{ padding: '40px', border: '2px solid var(--text-primary)', borderRadius: '24px', background: 'var(--bg-primary)', position: 'relative' }}
+          >
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '4px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600 }}>Most Popular</div>
             <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px' }}>Pro</h3>
             <div style={{ fontSize: '48px', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '24px' }}>$49<span style={{ fontSize: '16px', color: 'var(--text-tertiary)', fontWeight: 400 }}>/mo</span></div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '32px' }}>For startups scaling their AI automation.</p>
-            <button style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--bg-primary)', marginBottom: '32px' }}>Upgrade to Pro</button>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ width: '100%', padding: '12px', background: 'var(--text-primary)', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--bg-primary)', marginBottom: '32px', cursor: 'pointer' }}>Upgrade to Pro</motion.button>
             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}><Check size={16} /> Unlimited Agents</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}><Check size={16} /> GPT-4 & Claude 3</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}><Check size={16} /> Slack & API Integrations</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}><Check size={16} /> Advanced Analytics</li>
             </ul>
-          </div>
+          </motion.div>
 
           {/* Enterprise */}
-          <div style={{ padding: '40px', border: '1px solid var(--border-primary)', borderRadius: '24px', background: 'var(--bg-card)' }}>
+          <motion.div 
+            variants={fadeIn}
+            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            style={{ padding: '40px', border: '1px solid var(--border-primary)', borderRadius: '24px', background: 'var(--bg-card)' }}
+          >
             <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px' }}>Enterprise</h3>
             <div style={{ fontSize: '48px', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '24px' }}>Custom</div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '32px' }}>Custom infrastructure for large organizations.</p>
-            <button style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border-secondary)', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '32px' }}>Contact Sales</button>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border-secondary)', borderRadius: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '32px', cursor: 'pointer' }}>Contact Sales</motion.button>
             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> Dedicated VPC Deployment</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> Local Models Support</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> SOC2 & GDPR Compliance</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}><Check size={16} /> 24/7 SLA Support</li>
             </ul>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Footer */}
-      <footer style={{ marginTop: 'auto', borderTop: '1px solid var(--border-primary)', padding: '60px 48px', background: 'var(--bg-primary)' }}>
+      <motion.footer 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        style={{ marginTop: 'auto', borderTop: '1px solid var(--border-primary)', padding: '60px 48px', background: 'var(--bg-primary)' }}
+      >
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '40px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <div style={{ width: '24px', height: '24px', background: 'var(--text-primary)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bot size={16} color="var(--bg-primary)" />
+              <div style={{ width: '24px', height: '24px', borderRadius: '4px', overflow: 'hidden' }}>
+                <img src="/logo.png" alt="NexAgeAI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
-              <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>AgentOS</span>
+              <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>NexAgeAI</span>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.6, maxWidth: '240px' }}>
               The infrastructure for the agentic web. Build, deploy, and scale AI faster.
@@ -395,14 +455,14 @@ export default function Home() {
           </div>
         </div>
         <div style={{ maxWidth: '1200px', margin: '60px auto 0', borderTop: '1px solid var(--border-primary)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>© 2026 AgentOS Inc. All rights reserved.</p>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>© 2026 NexAgeAI Inc. All rights reserved.</p>
           <div style={{ display: 'flex', gap: '16px' }}>
             {/* Social icons could go here */}
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)' }}></div>
             <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>All systems operational</span>
           </div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
   );
 }
