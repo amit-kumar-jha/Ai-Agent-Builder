@@ -3,19 +3,21 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import useStore from '@/lib/store';
-import { Home, Bot, GitMerge, LayoutTemplate, Link2, BarChart2, CreditCard, Settings, LogOut, ChevronLeft, ChevronRight, Plus, Search, Bell, ChevronsUpDown, Menu, X } from 'lucide-react';
+import { Home, Bot, GitMerge, LayoutTemplate, Link2, BarChart2, CreditCard, Settings, LogOut, ChevronLeft, ChevronRight, Plus, Search, Bell, ChevronsUpDown, Menu, X, Coins } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getCurrentUser, logoutAction } from '@/actions/auth';
 import NotificationBell from '@/components/dashboard/NotificationBell';
+import CreditUsageBar from '@/components/dashboard/CreditUsageBar';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/agents', label: 'My Agents', icon: Bot },
   { href: '/dashboard/workflows', label: 'Workflows', icon: GitMerge },
-  { href: '/dashboard/marketplace', label: 'Templates', icon: LayoutTemplate },
+  { href: '/dashboard/marketplace', label: 'Marketplace', icon: LayoutTemplate },
   { href: '/dashboard/integrations', label: 'Integrations', icon: Link2 },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart2 },
+  { href: '/dashboard/earnings', label: 'Earnings', icon: Coins },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -57,9 +59,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname?.includes('/agents/new')) return 'Create Agent';
     if (pathname?.includes('/agents')) return 'My Agents';
     if (pathname?.includes('/workflows')) return 'Workflows';
-    if (pathname?.includes('/marketplace')) return 'Templates';
+    if (pathname?.includes('/marketplace')) return 'Marketplace';
     if (pathname?.includes('/integrations')) return 'Integrations';
     if (pathname?.includes('/analytics')) return 'Analytics';
+    if (pathname?.includes('/earnings')) return 'Earnings';
     if (pathname?.includes('/billing')) return 'Billing';
     if (pathname?.includes('/settings')) return 'Settings';
     return 'NexAgeAI';
@@ -88,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {(!sidebarCollapsed || mobileMenuOpen) && (
               <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>NexAgeAI</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Enterprise Plan</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{(user as any)?.plan ? `${(user as any).plan.charAt(0).toUpperCase() + (user as any).plan.slice(1)} Plan` : 'Free Plan'}</div>
               </div>
             )}
             {(!sidebarCollapsed || mobileMenuOpen) && <ChevronsUpDown size={14} color="var(--text-tertiary)" />}
@@ -131,6 +134,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
+
+        {/* Credit Usage Bar */}
+        <CreditUsageBar collapsed={sidebarCollapsed && !mobileMenuOpen} />
 
         {/* User Profile Footer */}
         <div style={{ padding: '16px', borderTop: '1px solid var(--border-primary)' }}>

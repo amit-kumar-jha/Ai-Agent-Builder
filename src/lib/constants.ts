@@ -84,3 +84,18 @@ export const STATUS_COLORS: Record<string, string> = {
   failed: 'red',
   cancelled: 'gray',
 };
+
+// ─── Plan Credit Limits ───
+export const PLAN_CREDITS: Record<string, number> = {
+  free: 100,
+  starter: 1000,
+  pro: 10000,
+  enterprise: 999999,
+};
+
+// ─── Credit Packs (purchasable) ───
+export const CREDIT_PACKS = [
+  { id: 'pack_500', credits: 500, price: 500, label: '500 Credits', priceLabel: '$5' },
+  { id: 'pack_2500', credits: 2500, price: 2000, label: '2,500 Credits', priceLabel: '$20' },
+  { id: 'pack_7500', credits: 7500, price: 5000, label: '7,500 Credits', priceLabel: '$50' },
+];

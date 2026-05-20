@@ -4,7 +4,11 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongoose';
 import User from '@/models/User';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'agentos-super-secret-key-for-dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
 
 export async function POST(req: Request) {
   try {

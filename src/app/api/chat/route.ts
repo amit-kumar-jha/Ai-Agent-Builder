@@ -3,12 +3,14 @@ import { LLM_MODELS } from '@/lib/engine/constants/models';
 import { LLMClient } from '@/lib/engine/services/LLMClient';
 import connectDB from '@/lib/mongoose';
 import Agent from '@/models/Agent';
+import Conversation from '@/models/Conversation';
+import { deductCredit } from '@/actions/credits';
 
 const llm = new LLMClient();
 
 export async function POST(req: Request) {
   try {
-    const { messages, systemPrompt, model, temperature, agentId } = await req.json();
+    const { messages, systemPrompt, model, temperature, agentId, sessionId } = await req.json();
 
     // Load agent to get knowledge base
     await connectDB();
@@ -18,6 +20,34 @@ export async function POST(req: Request) {
       agent = await Agent.findById(agentId).lean();
       console.log('[RAG] Agent found:', !!agent, 'ID:', agentId);
       console.log('[RAG] Knowledge docs:', agent?.knowledge?.length || 0);
+    }
+
+    // ─── Save User Message ───
+    if (agentId && sessionId && messages && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === 'user') {
+        await Conversation.findOneAndUpdate(
+          { agentId, sessionId },
+          { 
+            $push: { messages: { role: 'user', content: lastMsg.content, timestamp: new Date() } },
+            $set: { updatedAt: new Date() }
+          },
+          { upsert: true }
+        );
+      }
+    }
+
+    // ─── Credit Check ───
+    // Deduct 1 credit from the agent owner for each message
+    const ownerId = agent?.userId || agent?.user;
+    if (ownerId) {
+      const creditResult = await deductCredit(ownerId.toString());
+      if (!creditResult.allowed) {
+        return NextResponse.json({
+          error: creditResult.message || 'You have run out of credits. Please upgrade your plan or purchase a credit pack.',
+          code: 'NO_CREDITS',
+        }, { status: 402 }); // 402 Payment Required
+      }
     }
 
     let finalSystemPrompt = systemPrompt || 'You are a helpful assistant.';
@@ -89,6 +119,17 @@ ${finalSystemPrompt}`;
           // Track execution on agent
           await trackExecution(agentId, true, 0);
 
+          // Save AI Response to Conversation
+          if (agentId && sessionId) {
+            await Conversation.findOneAndUpdate(
+              { agentId, sessionId },
+              { 
+                $push: { messages: { role: 'assistant', content: data.message.content, timestamp: new Date() } },
+                $set: { updatedAt: new Date() }
+              }
+            );
+          }
+
           return NextResponse.json({ content: data.message.content });
         } catch (error: any) {
           await trackExecution(agentId, false, 0);
@@ -123,6 +164,17 @@ ${finalSystemPrompt}`;
 
       // Track execution on agent
       await trackExecution(agentId, true, cost);
+
+      // Save AI Response to Conversation
+      if (agentId && sessionId) {
+        await Conversation.findOneAndUpdate(
+          { agentId, sessionId },
+          { 
+            $push: { messages: { role: 'assistant', content: result.text, timestamp: new Date() } },
+            $set: { updatedAt: new Date() }
+          }
+        );
+      }
 
       return NextResponse.json({
         content: result.text,

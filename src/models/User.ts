@@ -51,6 +51,38 @@ const UserSchema = new mongoose.Schema({
     enum: ['free', 'starter', 'pro', 'enterprise'],
     default: 'free',
   },
+  whiteLabelEnabled: {
+    type: Boolean,
+    default: false,
+  },
+
+  // ─── Credit System ───
+  credits: {
+    type: Number,
+    default: 100, // Free plan default
+  },
+  creditsUsed: {
+    type: Number,
+    default: 0,
+  },
+  bonusCredits: {
+    type: Number,
+    default: 0, // Purchased credit packs (never expire with monthly reset)
+  },
+  creditsResetAt: {
+    type: Date,
+    default: () => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth() + 1, 1); // First of next month
+    },
+  },
+  creditPurchases: [{
+    amount: { type: Number, required: true },
+    price: { type: Number, required: true }, // USD cents
+    stripePaymentId: { type: String },
+    purchasedAt: { type: Date, default: Date.now },
+  }],
+
   stripeCustomerId: {
     type: String,
     unique: true,
@@ -66,6 +98,16 @@ const UserSchema = new mongoose.Schema({
   },
   stripeCurrentPeriodEnd: {
     type: Date,
+  },
+  paypalSubscriptionId: {
+    type: String,
+  },
+  paypalPayoutEmail: {
+    type: String,
+  },
+  totalEarnings: {
+    type: Number,
+    default: 0, // In USD
   },
 });
 

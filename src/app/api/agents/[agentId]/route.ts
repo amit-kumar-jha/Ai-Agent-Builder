@@ -36,12 +36,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ agentId:
       });
     }
 
-    const agent = await AgentModel.findById(agentId);
+    const agent = await AgentModel.findById(agentId).populate('user', 'whiteLabelEnabled');
     if (!agent) {
       return NextResponse.json({ success: false, error: { message: 'Agent not found' } }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: agent });
+    // Transform to include whiteLabelEnabled at top level if needed, or just let client handle it
+    const data = agent.toObject();
+    const whiteLabelEnabled = agent.user?.whiteLabelEnabled || false;
+
+    return NextResponse.json({ success: true, data: { ...data, whiteLabelEnabled } });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: { message: error.message } }, { status: 500 });
   }

@@ -1,13 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { CreditCard, Check, Shield, Loader2 } from 'lucide-react';
+import Script from 'next/script';
 import useStore from '@/lib/store';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { getUserCredits } from '@/actions/credits';
+import { CREDIT_PACKS } from '@/lib/constants';
 
 export default function BillingPage() {
   const { user } = useStore();
   const [loading, setLoading] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('paypal');
+  const [buyingPack, setBuyingPack] = useState<string | null>(null);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean, title: string, message: string, type: 'danger' | 'info' | 'warning' }>({
     isOpen: false,
     title: '',
@@ -35,10 +40,8 @@ export default function BillingPage() {
           showAlert('Payment Error', data.error || 'Failed to create Stripe session. Please check your credentials.', 'danger');
         }
       } else {
-        showAlert('PayPal Initialization', 'Redirecting you to PayPal secure checkout...', 'info');
-        setTimeout(() => {
-          window.location.href = `/api/billing/paypal?planId=${planId}`;
-        }, 1500);
+        // PayPal logic is handled by the PayPal button directly
+        showAlert('PayPal Checkout', 'Please use the PayPal button below to complete your upgrade.', 'info');
       }
     } catch (error) {
       showAlert('Connection Error', 'Failed to reach payment gateway. Please try again later.', 'danger');
@@ -51,10 +54,55 @@ export default function BillingPage() {
     showAlert('Enterprise Request', 'Our dedicated enterprise team has been notified. We will reach out to your registered email within 24 hours to schedule a custom demo.', 'info');
   };
 
+  const handleBuyCredits = async (packId: string) => {
+    setBuyingPack(packId);
+    try {
+      if (paymentMethod === 'stripe') {
+        const res = await fetch('/api/billing/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ packId, type: 'credits' }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          showAlert('Purchase Error', data.error || 'Failed to create checkout session.', 'danger');
+        }
+      } else {
+        showAlert('PayPal Checkout', 'Please use the PayPal button below the pack to complete your purchase.', 'info');
+      }
+    } catch {
+      showAlert('Connection Error', 'Failed to reach payment gateway.', 'danger');
+    } finally {
+      setBuyingPack(null);
+    }
+  };
+
   const isPro = user?.plan === 'pro';
+
+  const renderPayPalButton = (type: string, id: string, price?: number) => {
+    if (!paypalLoaded || paymentMethod !== 'paypal') return null;
+
+    return (
+      <div style={{ marginTop: '12px' }}>
+        <PayPalButton 
+          type={type} 
+          id={id} 
+          price={price} 
+          onSuccess={(msg) => showAlert('Success', msg, 'info')}
+          onError={(err) => showAlert('Payment Failed', err, 'danger')}
+        />
+      </div>
+    );
+  };
 
   return (
     <>
+      <Script 
+        src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'test'}&currency=USD`}
+        onLoad={() => setPaypalLoaded(true)}
+      />
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <div className="page-header" style={{ marginBottom: '32px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Billing & Usage</h2>
@@ -126,6 +174,7 @@ export default function BillingPage() {
               {loading === 'pro' && <Loader2 size={16} className="animate-spin" />}
               {isPro ? 'Current Plan' : 'Upgrade to Pro'}
             </button>
+            {!isPro && renderPayPalButton('plan', 'pro')}
           </div>
 
           <div style={{ padding: '32px 24px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px' }}>
@@ -146,6 +195,43 @@ export default function BillingPage() {
             </button>
           </div>
         </div>
+
+        {/* ─── Credit Usage Section ─── */}
+        <div style={{ marginTop: '48px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Credit Usage</h3>
+          <CreditUsageSection />
+        </div>
+
+        {/* ─── Credit Packs ─── */}
+        <div style={{ marginTop: '48px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Buy Credit Packs</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '20px' }}>Need more credits? Purchase a one-time credit pack. Bonus credits never expire with monthly resets.</p>
+          <div className="responsive-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {CREDIT_PACKS.map((pack) => (
+              <div key={pack.id} style={{ padding: '24px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '14px', textAlign: 'center', transition: 'all 0.2s' }}>
+                <div style={{ fontSize: '28px', marginBottom: '8px' }}>⚡</div>
+                <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px' }}>{pack.label}</div>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--accent-purple)', marginBottom: '16px' }}>{pack.priceLabel}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>
+                  ${(pack.price / pack.credits).toFixed(3)} per credit
+                </div>
+                <button
+                  onClick={() => handleBuyCredits(pack.id)}
+                  disabled={buyingPack === pack.id}
+                  style={{
+                    width: '100%', padding: '10px', background: 'var(--text-primary)', color: 'var(--bg-primary)',
+                    border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    opacity: buyingPack === pack.id ? 0.7 : 1,
+                  }}
+                >
+                  {buyingPack === pack.id ? <><Loader2 size={14} className="animate-spin" /> Processing...</> : paymentMethod === 'paypal' ? 'Buy with PayPal' : 'Buy with Stripe'}
+                </button>
+                {renderPayPalButton('credits', pack.id)}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <ConfirmationModal 
@@ -159,4 +245,110 @@ export default function BillingPage() {
       />
     </>
   );
+}
+
+/** Credit Usage Display Component */
+function CreditUsageSection() {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    async function load() {
+      const result = await getUserCredits();
+      if (result.success) setData(result.data);
+    }
+    load();
+  }, []);
+
+  if (!data) return null;
+
+  const { totalAvailable, creditsUsed, planLimit, plan, percentUsed, bonusCredits, resetsAt } = data;
+
+  const getBarColor = () => {
+    if (percentUsed >= 90) return '#EF4444';
+    if (percentUsed >= 70) return '#F59E0B';
+    return '#8B5CF6';
+  };
+
+  const resetDate = resetsAt ? new Date(resetsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  return (
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', padding: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '20px' }}>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>Available</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{totalAvailable.toLocaleString()}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>Used This Month</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{creditsUsed.toLocaleString()}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>Plan Limit</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{planLimit.toLocaleString()}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>Resets On</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{resetDate}</div>
+        </div>
+      </div>
+
+      {/* Usage Bar */}
+      <div style={{ marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+        <span>Usage this month</span>
+        <span style={{ color: getBarColor() }}>{percentUsed}%</span>
+      </div>
+      <div style={{ width: '100%', height: '8px', borderRadius: '4px', background: 'var(--bg-input)', overflow: 'hidden' }}>
+        <div style={{ width: `${Math.min(percentUsed, 100)}%`, height: '100%', borderRadius: '4px', background: getBarColor(), transition: 'width 0.5s ease' }} />
+      </div>
+
+      {bonusCredits > 0 && (
+        <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--accent-green)', fontWeight: 600 }}>
+          ✨ +{bonusCredits.toLocaleString()} bonus credits from purchased packs
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PayPalButton({ type, id, price, onSuccess, onError }: any) {
+  useEffect(() => {
+    // @ts-ignore
+    if (window.paypal) {
+      // @ts-ignore
+      window.paypal.Buttons({
+        createOrder: async () => {
+          const res = await fetch('/api/billing/paypal/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, packId: type === 'credits' ? id : undefined, planId: type === 'plan' ? id : undefined, price }),
+          });
+          const data = await res.json();
+          return data.orderID;
+        },
+        onApprove: async (data: any) => {
+          const res = await fetch('/api/billing/paypal/capture-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderID: data.orderID, type, packId: type === 'credits' ? id : undefined, planId: type === 'plan' ? id : undefined }),
+          });
+          const capture = await res.json();
+          if (capture.success) {
+            onSuccess(capture.message);
+            window.location.reload();
+          } else {
+            onError(capture.error);
+          }
+        },
+        style: {
+          layout: 'horizontal',
+          height: 38,
+          color: 'silver',
+          shape: 'rect',
+          label: 'paypal'
+        }
+      }).render(`#paypal-button-${type}-${id}`);
+    }
+  }, [type, id, price]);
+
+  return <div id={`paypal-button-${type}-${id}`} />;
 }

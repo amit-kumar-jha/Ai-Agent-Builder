@@ -40,3 +40,15 @@ export async function createPayPalOrder(planId: string, amount: string) {
   });
   return await response.json();
 }
+
+export async function capturePayPalOrder(orderID: string) {
+  const accessToken = await getPayPalAccessToken();
+  const response = await fetch(`${PAYPAL_API}/v2/checkout/orders/${orderID}/capture`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return await response.json();
+}

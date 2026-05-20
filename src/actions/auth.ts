@@ -6,7 +6,11 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongoose';
 import User from '@/models/User';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'agentos-super-secret-key-for-dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
 
 export async function signUpAction(formData: FormData) {
   try {
@@ -39,7 +43,7 @@ export async function signUpAction(formData: FormData) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
-    return { success: true, user: { _id: user._id.toString(), id: user._id.toString(), name: user.name, email: user.email, plan: 'free', credits: 100 } };
+    return { success: true, user: { _id: user._id.toString(), id: user._id.toString(), name: user.name, email: user.email, plan: user.plan || 'free', credits: user.credits ?? 100 } };
   } catch (error: any) {
     return { error: error.message || 'Server error' };
   }
@@ -75,7 +79,7 @@ export async function signInAction(formData: FormData) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
-    return { success: true, user: { _id: user._id.toString(), id: user._id.toString(), name: user.name, email: user.email, plan: 'free', credits: 100 } };
+    return { success: true, user: { _id: user._id.toString(), id: user._id.toString(), name: user.name, email: user.email, plan: user.plan || 'free', credits: user.credits ?? 100 } };
   } catch (error: any) {
     return { error: 'Server error' };
   }
@@ -97,7 +101,7 @@ export async function getCurrentUser() {
     const user = await User.findById(decoded.id).select('-password');
     if (!user) return null;
 
-    return { _id: user._id.toString(), id: user._id.toString(), name: user.name, email: user.email, role: user.role, plan: 'free', credits: 100 };
+    return { _id: user._id.toString(), id: user._id.toString(), name: user.name, email: user.email, role: user.role, plan: user.plan || 'free', credits: user.credits ?? 100 };
   } catch {
     return null;
   }

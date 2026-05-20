@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -5,9 +6,32 @@ const inter = Inter({ subsets: ["latin"] });
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "NexAgeAI - AI Agent Builder Platform",
-  description: "Build, deploy, and monetize AI agents without code. Visual workflow builder with multi-model support, execution tracing, and cost transparency.",
-  keywords: ["AI", "agent builder", "workflow automation", "GPT-4", "Claude", "no-code"],
+  title: "NexAgeAI — Build AI Agents That Work For You",
+  description: "The enterprise-grade platform to design, customize, deploy, and monetize intelligent AI agents across any channel. No code required.",
+  keywords: ["AI agent builder", "AI agents", "workflow automation", "LLM", "chatbot builder", "no-code AI", "AI SaaS", "agent marketplace"],
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://nexageai.com'),
+  openGraph: {
+    title: "NexAgeAI — Build AI Agents That Work For You",
+    description: "Design, deploy, and monetize intelligent AI agents across Slack, WhatsApp, web widgets, and API. 12+ LLM models, visual builder, and marketplace.",
+    siteName: "NexAgeAI",
+    type: "website",
+    locale: "en_US",
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "NexAgeAI Logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NexAgeAI — Build AI Agents That Work For You",
+    description: "Design, deploy, and monetize intelligent AI agents. No code required.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

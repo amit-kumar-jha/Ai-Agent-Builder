@@ -21,6 +21,8 @@ export async function getWorkspaceSettings() {
         apiKey: user.apiKey,
         email: user.email,
         name: user.name,
+        plan: user.plan,
+        paypalPayoutEmail: user.paypalPayoutEmail,
       }
     };
   } catch (error) {
@@ -28,16 +30,21 @@ export async function getWorkspaceSettings() {
   }
 }
 
-export async function updateWorkspace(data: { workspaceName: string }) {
+export async function updateWorkspace(data: { workspaceName: string; paypalPayoutEmail?: string }) {
   try {
     await connectDB();
     const currentUser = await getCurrentUser();
     
     if (!currentUser) return { error: 'Unauthorized' };
 
+    const updateData: any = { workspaceName: data.workspaceName };
+    if (data.paypalPayoutEmail !== undefined) {
+      updateData.paypalPayoutEmail = data.paypalPayoutEmail;
+    }
+
     const user = await User.findByIdAndUpdate(
       currentUser.id,
-      { workspaceName: data.workspaceName },
+      updateData,
       { new: true }
     );
 

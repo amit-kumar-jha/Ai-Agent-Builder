@@ -8,6 +8,8 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showRollKeyConfirm, setShowRollKeyConfirm] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
   const [alertModal, setAlertModal] = useState<{ isOpen: boolean, title: string, message: string, type: 'danger' | 'info' | 'warning' }>({
     isOpen: false,
     title: '',
@@ -19,6 +21,8 @@ export default function SettingsPage() {
   const [workspaceName, setWorkspaceName] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [email, setEmail] = useState('');
+  const [paypalPayoutEmail, setPaypalPayoutEmail] = useState('');
+  const [plan, setPlan] = useState('free');
   
   // Enterprise Data
   const [orgName, setOrgName] = useState('NexAgeAI Enterprise');
@@ -44,6 +48,8 @@ export default function SettingsPage() {
         setWorkspaceName(res.data.workspaceName || 'Personal Workspace');
         setApiKey(res.data.apiKey || '');
         setEmail(res.data.email || '');
+        setPaypalPayoutEmail(res.data.paypalPayoutEmail || '');
+        setPlan(res.data.plan || 'free');
       }
       setIsLoading(false);
     }
@@ -53,34 +59,33 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (!workspaceName.trim()) return;
     setIsSaving(true);
-    const res = await updateWorkspace({ workspaceName });
+    const res = await updateWorkspace({ workspaceName, paypalPayoutEmail });
     setIsSaving(false);
     if (res.success) {
-      alert('Workspace updated successfully!');
+      showAlert('Settings Saved', 'Your workspace settings have been updated successfully.', 'info');
     } else {
-      alert(res.error || 'Failed to update');
+      showAlert('Save Failed', res.error || 'Failed to update workspace settings.', 'danger');
     }
   };
 
   const handleRollKey = async () => {
-    const confirmed = confirm('Are you sure? Any live agents using this API key will stop working immediately.');
-    if (!confirmed) return;
-    
+    setShowRollKeyConfirm(false);
     setIsSaving(true);
     const res = await rollApiKey();
     setIsSaving(false);
     
     if (res.success) {
       setApiKey(res.apiKey);
-      alert('API Key rolled successfully!');
+      showAlert('API Key Rotated', 'Your new API key has been generated. Update any live integrations immediately.', 'warning');
     } else {
-      alert(res.error || 'Failed to roll key');
+      showAlert('Rotation Failed', res.error || 'Failed to rotate API key.', 'danger');
     }
   };
 
   const handleCopyKey = () => {
     navigator.clipboard.writeText(apiKey);
-    alert('API Key copied to clipboard!');
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   if (isLoading) {
@@ -274,6 +279,64 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeTab === 'api' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', padding: '24px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>API Key</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>Use this key to authenticate API requests to your agents.</p>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  <input 
+                    readOnly value={apiKey}
+                    style={{ flex: 1, padding: '10px 14px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', fontSize: '13px', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                  <button onClick={handleCopyKey} style={{ padding: '10px 16px', background: copiedKey ? 'rgba(16,185,129,0.1)' : 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: copiedKey ? 'var(--accent-green)' : 'var(--text-secondary)', transition: 'all 0.2s' }}>
+                    <Copy size={14} /> {copiedKey ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <button 
+                  onClick={() => setShowRollKeyConfirm(true)}
+                  disabled={isSaving}
+                  style={{ padding: '10px 16px', background: 'transparent', border: '1px solid var(--accent-red)', borderRadius: '8px', color: 'var(--accent-red)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: isSaving ? 0.6 : 1 }}
+                >
+                  <RefreshCw size={14} /> Rotate API Key
+                </button>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', padding: '24px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>PayPal Payout Email</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>Revenue from marketplace agent sales will be sent to this PayPal email. You receive 80% of each sale.</p>
+                <input 
+                  type="email" 
+                  placeholder="your-paypal@email.com" 
+                  value={paypalPayoutEmail}
+                  onChange={(e) => setPaypalPayoutEmail(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', background: 'var(--bg-input)', border: '1px solid var(--border-primary)', borderRadius: '8px', fontSize: '14px', color: 'var(--text-primary)', outline: 'none', marginBottom: '16px' }}
+                  className="focus-ring"
+                />
+                <button 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="btn btn-primary"
+                  style={{ opacity: isSaving ? 0.7 : 1 }}
+                >
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : 'Save Payout Email'}
+                </button>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', padding: '24px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Quick Start</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '20px' }}>Call your agent from any application using the REST API.</p>
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px', padding: '16px', fontFamily: 'var(--font-mono)', fontSize: '12px', lineHeight: 1.8, color: 'var(--text-secondary)', overflow: 'auto' }}>
+                  <div><span style={{ color: 'var(--accent-cyan)' }}>curl</span>{' -X POST \\'}</div>
+                  <div>{'  https://your-domain.com/api/chat \\'}</div>
+                  <div>{'  -H '}<span style={{ color: 'var(--accent-green)' }}>{'"Content-Type: application/json"'}</span>{' \\'}</div>
+                  <div>{'  -H '}<span style={{ color: 'var(--accent-green)' }}>{`"Authorization: Bearer ${apiKey?.slice(0, 12) || 'sk-live-xxxx'}..."`}</span>{' \\'}</div>
+                  <div>{'  -d '}<span style={{ color: 'var(--accent-amber)' }}>{'\'{"messages": [{"role": "user", "content": "Hello"}], "agentId": "YOUR_AGENT_ID"}\''}</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'webhooks' && (
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: '16px', overflow: 'hidden' }}>
               <div style={{ padding: '24px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -281,7 +344,7 @@ export default function SettingsPage() {
                   <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Webhooks</h3>
                   <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '4px' }}>Receive real-time event notifications at your external URL.</p>
                 </div>
-                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => showAlert('Add Webhook', 'Enter your webhook endpoint URL and select the events you want to subscribe to.', 'info')}>
                   <Plus size={16} /> Add Endpoint
                 </button>
               </div>
@@ -313,6 +376,16 @@ export default function SettingsPage() {
         onConfirm={() => setAlertModal({ ...alertModal, isOpen: false })}
         onCancel={() => setAlertModal({ ...alertModal, isOpen: false })}
         type={alertModal.type}
+      />
+
+      <ConfirmationModal 
+        isOpen={showRollKeyConfirm}
+        title="Rotate API Key"
+        message="Are you sure? Any live agents using this API key will stop working immediately. You'll need to update all integrations with the new key."
+        confirmLabel="Rotate Key"
+        onConfirm={handleRollKey}
+        onCancel={() => setShowRollKeyConfirm(false)}
+        type="danger"
       />
     </div>
   );

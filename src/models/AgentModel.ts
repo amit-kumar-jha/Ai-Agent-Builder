@@ -100,6 +100,8 @@ const agentSchema = new mongoose.Schema(
     color: { type: String, default: '#8B5CF6' },
     public: { type: Boolean, default: false },
     marketplacePrice: { type: Number, default: 0 },
+    leadCaptureEnabled: { type: Boolean, default: false },
+    customLogo: { type: String, default: null },
 
     knowledge: [{
       fileName: { type: String, required: true },
